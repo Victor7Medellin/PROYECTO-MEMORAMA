@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorama</title>
+    <style>
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+        }
+    
+        #mycanvas {
+            border: 1px solid #000;
+        }
+    
+        #menu {
+            text-align: center;
+        }
+    
+        #startButton {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    
+        #startButton:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    
+</head>
+
+<body>
+    <center><canvas id="mycanvas" width="1000" height="800"></canvas></center>
+    <div id="menu">
+        <button id="startButton">Iniciar Juego</button>
+        <button id="muteButton" style="background-image: url('unmute.png'); background-size: cover; text-indent: -9999px; width: 32px; height: 32px;">Silenciar</button>
+    
+    </div>
+    <audio id="backgroundMusic" loop>
+        <source src="musica-fondo2.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="cardSound">
+        <source src="sonido-carta.mp3" type="audio/mpeg">
+    </audio>
+    <script>
+        // 1. Ocupo agregar el temporizador del juego.
+        // 2. Ocupo agregar que la dificultad va en aumento mediante avancen los niveles ( por ejemplo mover los pares cada x cantidad de jugadas ).
+        // 3. Mejorar la calidad de las imagenes.
+        // 4. Mejorar la interfaz del juego y su funcionalidad.
+        // Simpre hay algo bueno, tengo la funcionalidad del juego casi terminado (un 80%).  
+        
+        var canvas = document.getElementById("mycanvas");
+        var ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#d1fb94";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        var cardWidth = 100;
+        var cardHeight = 100;
+        var gap = 50;
+
+        // Agrega un evento al botón de silencio (mute)
+        var muteButton = document.getElementById("muteButton");
+        var backgroundMusic = document.getElementById("backgroundMusic");
+
+        muteButton.addEventListener("click", function () {
+            if (backgroundMusic.paused) {
+                backgroundMusic.play();
+                muteButton.textContent = "Silenciar";
+            } else {
+                backgroundMusic.pause();
+                muteButton.textContent = "Activar musica";
+            }
+        });
+
+        var images = [
+            "1.png", "1.png",
+            "2.png", "2.png",
+            "3.png", "3.png",
+            "4.png", "4.png",
+            "5.jpg", "5.jpg",
+            "6.png", "6.png",
+            "7.png", "7.png",
+            "8.png", "8.png",
+            "9.png", "9.png",
+            "10.png", "10.png",
+            "11.jpg", "11.jpg",
+            "12.png", "12.png",
+            "13.png", "13.png",
+            "14.png", "14.png",
+            "15.png", "15.png",
+        ];
+
+        // Función para revolver las imágenes aleatoriamente.
+        function displayImage(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        canvas.addEventListener("mousedown", (event) => {
+            var LayautX = event.clientX - canvas.getBoundingClientRect().left;
+            var LayautY = event.clientY - canvas.getBoundingClientRect().top;
+
+            ctx.beginPath();
+            ctx.arc(LayautX, LayautY, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "orange";
+            ctx.fill();
+            ctx.strokeStyle = "rgb(0, 0, 0)";
+            ctx.stroke();
+        });
+
+        // Carga las imágenes
+        var imageObjects = [];
+
+        // Estado de las cartas (0: boca abajo, 1: boca arriba, 2: desaparecida)
+        var cardStates = Array(images.length).fill(0);
+
+        // Índices de las cartas seleccionadas
+        var firstCardIndex = -1;
+        var secondCardIndex = -1;
+
+        function loadImages() {
+            displayImage(images);
+            var loadedImages = 0;
+            for (let i = 0; i < images.length; i++) {
+                var image = new Image();
+                image.src = images[i];
+                image.onload = () => {
+                    loadedImages++;
+                    if (loadedImages === images.length) {
+                        // Cuando se han cargado todas las imágenes, habilita el botón de inicio del juego
+                        document.getElementById("startButton").disabled = false;
+                    }
+                };
+                imageObjects.push(image);
+            }
+        }
+
+        function startGame() {
+            // Dibuja las cartas en el canvas
+            let x = gap;
+            let y = gap;
+            for (let i = 0; i < images.length; i++) {
+                drawCard(x, y, i);
+                x += cardWidth + gap;
+                if (x + cardWidth + gap > canvas.width) {
+                    x = gap;
+                    y += cardHeight + gap;
+                }
+            }
+
+            // Oculto el botón de inicio del juego
+            document.getElementById("startButton").style.display = "none";
+
+            // Agrego un evento de clic al canvas
+            canvas.addEventListener("click", handleClick);
+        }
+
+        function drawCard(x, y, index) {
+            const state = cardStates[index];
+
+            // Dibujo un cuadrado para representar la carta
+            ctx.fillStyle = "#ecffae";
+            ctx.fillRect(x, y, cardWidth, cardHeight);
+
+            if (state === 0) {
+                ctx.fillStyle = "#b6f77b";
+                ctx.fillRect(x, y, cardWidth, cardHeight);
+
+                ctx.fillStyle = "black";
+                ctx.font = "24px Arial black";
+                ctx.fillText("?", x + cardWidth / 2 - 12, y + cardHeight / 2 + 10);
+            } else if (state === 1) {
+                ctx.drawImage(imageObjects[index], x, y, cardWidth, cardHeight);
+            }
+        }
+
+        let isWaiting = false;
+
+        //Funcion de delay
+        function handleClick(event) {
+            if (isWaiting) {
+                return;
+            }
+
+            var mouseX = event.clientX - canvas.getBoundingClientRect().left;
+            var mouseY = event.clientY - canvas.getBoundingClientRect().top;
+
+            // Comprueba si se hizo clic en una carta boca abajo
+            for (let i = 0; i < images.length; i++) {
+                const x = gap + (cardWidth + gap) * (i % 6);
+                const y = gap + (cardHeight + gap) * Math.floor(i / 6);
+
+                if (
+                    cardStates[i] === 0 &&
+                    mouseX >= x && mouseX <= x + cardWidth &&
+                    mouseY >= y && mouseY <= y + cardHeight
+                ) {
+                    // Voltea la carta
+                    cardStates[i] = 1;
+                    redrawCards();
+
+                    // Reproduce el sonido de la carta
+                    const cardSound = document.getElementById("cardSound");
+                    cardSound.currentTime = 0;
+                    cardSound.play();
+
+                    if (firstCardIndex === -1) {
+                        firstCardIndex = i;
+                    } else {
+                        secondCardIndex = i;
+
+                        if (images[firstCardIndex] === images[secondCardIndex]) {
+                            cardStates[firstCardIndex] = 2;
+                            cardStates[secondCardIndex] = 2;
+                        }
+                        // Delay
+                        isWaiting = true;
+                        setTimeout(() => {
+                            cardStates[firstCardIndex] = 0;
+                            cardStates[secondCardIndex] = 0;
+                            redrawCards();
+                            firstCardIndex = -1;
+                            secondCardIndex = -1;
+                            isWaiting = false;
+                        }, 1000);
+                    }
+
+                    redrawCards();
+                    break;
+                }
+            }
+        }
+        function redrawCards() {
+            // Borra el canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibuja las cartas en función de su estado actual
+            ctx.fillStyle = "#d1fb94";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            let x = gap;
+            let y = gap;
+            for (let i = 0; i < images.length; i++) {
+                drawCard(x, y, i);
+                x += cardWidth + gap;
+                if (x + cardWidth + gap > canvas.width) {
+                    x = gap;
+                    y += cardHeight + gap;
+                }
+            }
+        }
+
+        // Inicia la carga de imágenes 
+        loadImages();
+
+        // Agrega un evento al botón de inicio del juego
+        document.getElementById("startButton").addEventListener("click", () => {
+            // Deshabilita el botón después de hacer clic para evitar iniciar el juego varias veces
+            document.getElementById("startButton").disabled = true;
+            startGame();
+        });
+    </script>
+</body>
+
+</html>
