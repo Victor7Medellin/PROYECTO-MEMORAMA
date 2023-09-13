@@ -1,0 +1,52 @@
+body{
+    background-color: #FFFFFF;
+
+}
+#container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh;
+}
+
+#mycanvas {
+    border: 1px solid #000;
+    cursor: url('src/cursor.cur'), default;
+}
+
+#menu {
+    text-align: center;
+}
+
+#easyButton {
+    padding: 5px 5px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+#easyButton:hover {
+    background-color: #0056b3;
+}
+
+#timer {
+    position: absolute;
+    top: 10px;
+    left: 280px;
+    background-color: #b6f77b;
+    color: black;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+#muteButton {
+    background-image: url('src/unmute.png');
+    background-size: cover;
+    text-indent: -9999px;
+    width: 32px;
+    height: 32px;
+}

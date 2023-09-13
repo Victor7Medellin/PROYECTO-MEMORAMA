@@ -1,62 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memorama</title>
-    <style>
-        #container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            height: 100vh;
-        }
-    
-        #mycanvas {
-            border: 1px solid #000;
-        }
-    
-        #menu {
-            text-align: center;
-        }
-    
-        #startButton {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-    
-        #startButton:hover {
-            background-color: #0056b3;
-        }
-    </style>
-    
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 
 <body>
     <center><canvas id="mycanvas" width="1000" height="800"></canvas></center>
     <div id="menu">
-        <button id="startButton">Iniciar Juego</button>
-        <button id="muteButton" style="background-image: url('unmute.png'); background-size: cover; text-indent: -9999px; width: 32px; height: 32px;">Silenciar</button>
-    
+        <button id="easyButton">Fácil</button>
+        <button id="mediumButton">Medio</button>
+        <button id="hardButton">Difícil</button>
+        <button id="muteButton">Silenciar</button>
     </div>
+    <div id="timer">Tiempo: 0 segundos</div>
     <audio id="backgroundMusic" loop>
-        <source src="musica-fondo2.mp3" type="audio/mpeg">
+        <source src="sound/musica-fondo2.mp3" type="audio/mpeg">
     </audio>
     <audio id="cardSound">
-        <source src="sonido-carta.mp3" type="audio/mpeg">
+        <source src="sound/sonido-carta.mp3" type="audio/mpeg">
     </audio>
     <script>
-        // 1. Ocupo agregar el temporizador del juego.
-        // 2. Ocupo agregar que la dificultad va en aumento mediante avancen los niveles ( por ejemplo mover los pares cada x cantidad de jugadas ).
-        // 3. Mejorar la calidad de las imagenes.
-        // 4. Mejorar la interfaz del juego y su funcionalidad.
-        // Simpre hay algo bueno, tengo la funcionalidad del juego casi terminado (un 80%).  
-        
+        // 1. Ocupo agregar el temporizador del juego (LISTO).
+        // 2. Ocupo agregar que la dificultad, la dificultad que pude agregar es que tenga tiempo limite (LISTO).
+        // 3. Mejorar la calidad de las imagenes (FALTA).
+        // 4. Mejorar la interfaz del juego y su funcionalidad (FALTA).
+        // Simpre hay algo bueno, tengo la funcionalidad del juego casi terminado (un 90%).  
+        // 13/09/2023
+        // Medellin Meza Victor Alejandro
+
         var canvas = document.getElementById("mycanvas");
         var ctx = canvas.getContext("2d");
 
@@ -66,8 +41,11 @@
         var cardWidth = 100;
         var cardHeight = 100;
         var gap = 50;
+        var gameStarted = false;
+        var startTime;
+        var timerInterval;
+        var isWaiting = false;
 
-        // Agrega un evento al botón de silencio (mute)
         var muteButton = document.getElementById("muteButton");
         var backgroundMusic = document.getElementById("backgroundMusic");
 
@@ -82,21 +60,21 @@
         });
 
         var images = [
-            "1.png", "1.png",
-            "2.png", "2.png",
-            "3.png", "3.png",
-            "4.png", "4.png",
-            "5.jpg", "5.jpg",
-            "6.png", "6.png",
-            "7.png", "7.png",
-            "8.png", "8.png",
-            "9.png", "9.png",
-            "10.png", "10.png",
-            "11.jpg", "11.jpg",
-            "12.png", "12.png",
-            "13.png", "13.png",
-            "14.png", "14.png",
-            "15.png", "15.png",
+            "src/1.png", "src/1.png",
+            "src/2.png", "src/2.png",
+            "src/3.png", "src/3.png",
+            "src/4.png", "src/4.png",
+            "src/5.jpg", "src/5.jpg",
+            "src/6.png", "src/6.png",
+            "src/7.png", "src/7.png",
+            "src/8.png", "src/8.png",
+            "src/9.png", "src/9.png",
+            "src/10.png", "src/10.png",
+            "src/11.jpg", "src/11.jpg",
+            "src/12.png", "src/12.png",
+            "src/13.png", "src/13.png",
+            "src/14.png", "src/14.png",
+            "src/15.png", "src/15.png",
         ];
 
         // Función para revolver las imágenes aleatoriamente.
@@ -138,33 +116,110 @@
                 image.onload = () => {
                     loadedImages++;
                     if (loadedImages === images.length) {
-                        // Cuando se han cargado todas las imágenes, habilita el botón de inicio del juego
-                        document.getElementById("startButton").disabled = false;
+                        // Cuando se han cargado todas las imágenes, habilita los botones del juego
+                        document.getElementById("easyButton").addEventListener("click", () => {
+                            startGame("easy");
+                            document.getElementById("easyButton").disabled = true;
+                            document.getElementById("mediumButton").disabled = false;
+                            document.getElementById("hardButton").disabled = false;
+                        });
+
+                        document.getElementById("mediumButton").addEventListener("click", () => {
+                            startGame("medium");
+                            document.getElementById("easyButton").disabled = false;
+                            document.getElementById("mediumButton").disabled = true;
+                            document.getElementById("hardButton").disabled = false;
+                        });
+
+                        document.getElementById("hardButton").addEventListener("click", () => {
+                            startGame("hard");
+                            document.getElementById("easyButton").disabled = false;
+                            document.getElementById("mediumButton").disabled = false;
+                            document.getElementById("hardButton").disabled = true;
+                        });
                     }
                 };
                 imageObjects.push(image);
             }
         }
-
-        function startGame() {
-            // Dibuja las cartas en el canvas
-            let x = gap;
-            let y = gap;
-            for (let i = 0; i < images.length; i++) {
-                drawCard(x, y, i);
-                x += cardWidth + gap;
-                if (x + cardWidth + gap > canvas.width) {
-                    x = gap;
-                    y += cardHeight + gap;
+        function startGame(level) {
+            resetGame();
+            // el nivel facil no tiene limite
+            if (level === "easy") {
+                let x = gap;
+                let y = gap;
+                for (let i = 0; i < images.length; i++) {
+                    drawCard(x, y, i);
+                    x += cardWidth + gap;
+                    if (x + cardWidth + gap > canvas.width) {
+                        x = gap;
+                        y += cardHeight + gap;
+                    }
                 }
             }
 
-            // Oculto el botón de inicio del juego
-            document.getElementById("startButton").style.display = "none";
+            if (level === "medium") {
+                let x = gap;
+                let y = gap;
+                var timeLimit = 0;
+                var timeLimit = 240; // 4 minutos para el nivel medio
+                for (let i = 0; i < images.length; i++) {
+                    drawCard(x, y, i);
+                    x += cardWidth + gap;
+                    if (x + cardWidth + gap > canvas.width) {
+                        x = gap;
+                        y += cardHeight + gap;
+                    }
+                }
+            }
+            if (level === "hard") {
+                let x = gap;
+                let y = gap;
+                var timeLimit = 0;
+                var timeLimit = 120; // 2 minutos para el nivel dificil
+                for (let i = 0; i < images.length; i++) {
+                    drawCard(x, y, i);
+                    x += cardWidth + gap;
+                    if (x + cardWidth + gap > canvas.width) {
+                        x = gap;
+                        y += cardHeight + gap;
+                    }
+                }
+            }
 
-            // Agrego un evento de clic al canvas
-            canvas.addEventListener("click", handleClick);
+            // Inicia el temporizador
+            startTimer(timeLimit);
         }
+
+        // Agrego un evento de clic al canvas
+        canvas.addEventListener("click", handleClick);
+
+        if (!gameStarted) {
+            startTime = Date.now();
+            gameStarted = true;
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+
+        // Función el contador de tiempo
+        function updateTimer() {
+            if (gameStarted) {
+                var currentTime = Date.now();
+                var elapsedTime = Math.floor((currentTime - startTime) / 1000);
+
+                var minutes = Math.floor(elapsedTime / 60);
+                var seconds = elapsedTime % 60;
+
+                var timerText = "Tiempo: ";
+                if (minutes > 0) {
+                    timerText += minutes + " minutos ";
+                }
+                timerText += seconds + " segundos";
+
+                document.getElementById("timer").textContent = timerText;
+            }
+        }
+
 
         function drawCard(x, y, index) {
             const state = cardStates[index];
@@ -185,14 +240,11 @@
             }
         }
 
-        let isWaiting = false;
-
         //Funcion de delay
         function handleClick(event) {
             if (isWaiting) {
                 return;
             }
-
             var mouseX = event.clientX - canvas.getBoundingClientRect().left;
             var mouseY = event.clientY - canvas.getBoundingClientRect().top;
 
@@ -200,7 +252,6 @@
             for (let i = 0; i < images.length; i++) {
                 const x = gap + (cardWidth + gap) * (i % 6);
                 const y = gap + (cardHeight + gap) * Math.floor(i / 6);
-
                 if (
                     cardStates[i] === 0 &&
                     mouseX >= x && mouseX <= x + cardWidth &&
@@ -217,30 +268,37 @@
 
                     if (firstCardIndex === -1) {
                         firstCardIndex = i;
+
                     } else {
                         secondCardIndex = i;
 
                         if (images[firstCardIndex] === images[secondCardIndex]) {
                             cardStates[firstCardIndex] = 2;
                             cardStates[secondCardIndex] = 2;
+                            console.log("entro");
                         }
                         // Delay
                         isWaiting = true;
                         setTimeout(() => {
-                            cardStates[firstCardIndex] = 0;
-                            cardStates[secondCardIndex] = 0;
-                            redrawCards();
+                            // Si no se encontró un par, voltea las cartas nuevamente
+                            if (cardStates[firstCardIndex] !== 2 || cardStates[secondCardIndex] !== 2) {
+                                cardStates[firstCardIndex] = 0;
+                                cardStates[secondCardIndex] = 0;
+                                console.log("le valio");
+                            }
                             firstCardIndex = -1;
                             secondCardIndex = -1;
                             isWaiting = false;
+                            redrawCards();
+                            checkGameComplete();
                         }, 1000);
                     }
-
-                    redrawCards();
                     break;
                 }
             }
         }
+
+
         function redrawCards() {
             // Borra el canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -251,7 +309,9 @@
             let x = gap;
             let y = gap;
             for (let i = 0; i < images.length; i++) {
-                drawCard(x, y, i);
+                if (cardStates[i] !== 2) { 
+                    drawCard(x, y, i);
+                }
                 x += cardWidth + gap;
                 if (x + cardWidth + gap > canvas.width) {
                     x = gap;
@@ -260,15 +320,44 @@
             }
         }
 
+        function checkGameComplete() {
+            // Comprueba si todas las cartas están en el estado "eliminado"
+            if (cardStates.every(state => state === 2)) {
+                clearInterval(timerInterval); 
+                alert("¡Has ganado el juego!"); 
+            }
+        }
+
+        function startTimer(timeLimit) {
+            var startTime = Date.now();
+            var timerInterval = setInterval(function () {
+                var currentTime = Date.now();
+                var elapsedTime = Math.floor((currentTime - startTime) / 1000);
+
+                var minutes = Math.floor(elapsedTime / 60);
+                var seconds = elapsedTime % 60;
+
+                // Actualiza el temporizador en la pantalla
+                document.getElementById("timer").textContent = "Tiempo: " + minutes + " minutos " + seconds + " segundos";
+
+                if (elapsedTime >= timeLimit) {
+                    clearInterval(timerInterval); 
+                    alert("¡LOSER! Tiempo agotado."); 
+                    resetGame();
+                }
+            }, 1000);
+        }
+
+        function resetGame() {
+            // Restablece el estado del juego y todas las variables necesarias
+            clearInterval(timerInterval); 
+            document.getElementById("timer").textContent = "Tiempo: 0 minutos 0 segundos";
+            cardStates.fill(0);
+            redrawCards();
+        }
+
         // Inicia la carga de imágenes 
         loadImages();
-
-        // Agrega un evento al botón de inicio del juego
-        document.getElementById("startButton").addEventListener("click", () => {
-            // Deshabilita el botón después de hacer clic para evitar iniciar el juego varias veces
-            document.getElementById("startButton").disabled = true;
-            startGame();
-        });
     </script>
 </body>
 
