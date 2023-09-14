@@ -20,6 +20,9 @@
     <audio id="backgroundMusic" loop>
         <source src="sound/musica-fondo2.mp3" type="audio/mpeg">
     </audio>
+    <audio id="backgrounSound" loop>
+        <source src="sound/musica-fondo.mp3" type="audio/mpeg">
+    </audio>
     <audio id="cardSound">
         <source src="sound/sonido-carta.mp3" type="audio/mpeg">
     </audio>
@@ -45,6 +48,8 @@
         var startTime;
         var timerInterval;
         var isWaiting = false;
+        var minutes;
+        var seconds;
 
         var muteButton = document.getElementById("muteButton");
         var backgroundMusic = document.getElementById("backgroundMusic");
@@ -85,6 +90,13 @@
             }
         }
 
+        function showImage() {
+            var a = Math.floor(Math.random() * images.length);
+            var img = images[a];
+            pic.style.backgroundImage = img;
+        }
+
+        // Función para revolver las imágenes aleatoriamente.
         canvas.addEventListener("mousedown", (event) => {
             var LayautX = event.clientX - canvas.getBoundingClientRect().left;
             var LayautY = event.clientY - canvas.getBoundingClientRect().top;
@@ -144,6 +156,19 @@
         }
         function startGame(level) {
             resetGame();
+            backgroundMusic.pause();
+
+            // Selecciona la música de fondo según el nivel
+            if (level === "easy") {
+                backgroundMusic.src = "sound/musica-fondo2.mp3";
+            } else if (level === "medium") {
+                backgroundMusic.src = "sound/musica-fondo.mp3";
+            } else if (level === "hard") {
+                backgroundMusic.src = "sound/musica-fondo.mp3";
+            }
+
+            backgroundMusic.play();
+
             // el nivel facil no tiene limite
             if (level === "easy") {
                 let x = gap;
@@ -193,33 +218,6 @@
 
         // Agrego un evento de clic al canvas
         canvas.addEventListener("click", handleClick);
-
-        if (!gameStarted) {
-            startTime = Date.now();
-            gameStarted = true;
-            timerInterval = setInterval(updateTimer, 1000);
-        }
-
-
-        // Función el contador de tiempo
-        function updateTimer() {
-            if (gameStarted) {
-                var currentTime = Date.now();
-                var elapsedTime = Math.floor((currentTime - startTime) / 1000);
-
-                var minutes = Math.floor(elapsedTime / 60);
-                var seconds = elapsedTime % 60;
-
-                var timerText = "Tiempo: ";
-                if (minutes > 0) {
-                    timerText += minutes + " minutos ";
-                }
-                timerText += seconds + " segundos";
-
-                document.getElementById("timer").textContent = timerText;
-            }
-        }
-
 
         function drawCard(x, y, index) {
             const state = cardStates[index];
@@ -298,7 +296,6 @@
             }
         }
 
-
         function redrawCards() {
             // Borra el canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -309,7 +306,7 @@
             let x = gap;
             let y = gap;
             for (let i = 0; i < images.length; i++) {
-                if (cardStates[i] !== 2) { 
+                if (cardStates[i] !== 2) {
                     drawCard(x, y, i);
                 }
                 x += cardWidth + gap;
@@ -323,34 +320,38 @@
         function checkGameComplete() {
             // Comprueba si todas las cartas están en el estado "eliminado"
             if (cardStates.every(state => state === 2)) {
-                clearInterval(timerInterval); 
-                alert("¡Has ganado el juego!"); 
+                clearInterval(timerInterval);
+                alert("¡Has ganado el juego!");
             }
         }
 
         function startTimer(timeLimit) {
             var startTime = Date.now();
-            var timerInterval = setInterval(function () {
+            timerInterval = setInterval(function () { // Elimina la declaración "var" aquí
                 var currentTime = Date.now();
                 var elapsedTime = Math.floor((currentTime - startTime) / 1000);
 
-                var minutes = Math.floor(elapsedTime / 60);
-                var seconds = elapsedTime % 60;
+                minutes = Math.floor(elapsedTime / 60);
+                seconds = elapsedTime % 60;
 
                 // Actualiza el temporizador en la pantalla
                 document.getElementById("timer").textContent = "Tiempo: " + minutes + " minutos " + seconds + " segundos";
 
                 if (elapsedTime >= timeLimit) {
-                    clearInterval(timerInterval); 
-                    alert("¡LOSER! Tiempo agotado."); 
+                    clearInterval(timerInterval);
+                    alert("¡LOSER! Tiempo agotado.");
                     resetGame();
                 }
             }, 1000);
         }
 
+
         function resetGame() {
+
             // Restablece el estado del juego y todas las variables necesarias
-            clearInterval(timerInterval); 
+            minutes = 0;
+            seconds = 0;
+            clearInterval(timerInterval);
             document.getElementById("timer").textContent = "Tiempo: 0 minutos 0 segundos";
             cardStates.fill(0);
             redrawCards();
