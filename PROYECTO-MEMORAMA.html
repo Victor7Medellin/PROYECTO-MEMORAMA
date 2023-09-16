@@ -10,6 +10,7 @@
 
 <body>
     <center><canvas id="mycanvas" width="1000" height="800"></canvas></center>
+    <h3>Seleccione la dificultad del juego</h3>
     <div id="menu">
         <button id="easyButton">Fácil</button>
         <button id="mediumButton">Medio</button>
@@ -17,24 +18,43 @@
         <button id="muteButton">Silenciar</button>
     </div>
     <div id="timer">Tiempo: 0 segundos</div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>¡Has ganado el juego!</p>
+            <button id="restartButton">Aceptar</button>
+        </div>
+    </div>
+
+    <div id="loseModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>¡Has perdido el juego!</p>
+            <button id="restartButton">Aceptar</button>
+        </div>
+    </div>
+
     <audio id="backgroundMusic" loop>
         <source src="sound/musica-fondo2.mp3" type="audio/mpeg">
     </audio>
     <audio id="backgrounSound" loop>
         <source src="sound/musica-fondo.mp3" type="audio/mpeg">
     </audio>
+    </audio>
+    <audio id="backgrounSound" loop>
+        <source src="sound/sonido-fondo3.mp3" type="audio/mpeg">
+    </audio>
     <audio id="cardSound">
         <source src="sound/sonido-carta.mp3" type="audio/mpeg">
     </audio>
+    <audio id="winSound">
+        <source src="sound/winSound.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="loseSound">
+        <source src="sound/sound-gameOver.mp3" type="audio/mpeg">
+    </audio>
     <script>
-        // 1. Ocupo agregar el temporizador del juego (LISTO).
-        // 2. Ocupo agregar que la dificultad, la dificultad que pude agregar es que tenga tiempo limite (LISTO).
-        // 3. Mejorar la calidad de las imagenes (FALTA).
-        // 4. Mejorar la interfaz del juego y su funcionalidad (FALTA).
-        // Simpre hay algo bueno, tengo la funcionalidad del juego casi terminado (un 90%).  
-        // 13/09/2023
-        // Medellin Meza Victor Alejandro
-
         var canvas = document.getElementById("mycanvas");
         var ctx = canvas.getContext("2d");
 
@@ -69,20 +89,18 @@
             "src/2.png", "src/2.png",
             "src/3.png", "src/3.png",
             "src/4.png", "src/4.png",
-            "src/5.jpg", "src/5.jpg",
+            "src/5.png", "src/5.png",
             "src/6.png", "src/6.png",
             "src/7.png", "src/7.png",
             "src/8.png", "src/8.png",
             "src/9.png", "src/9.png",
             "src/10.png", "src/10.png",
-            "src/11.jpg", "src/11.jpg",
+            "src/11.png", "src/11.png",
             "src/12.png", "src/12.png",
             "src/13.png", "src/13.png",
             "src/14.png", "src/14.png",
             "src/15.png", "src/15.png",
         ];
-
-        // Función para revolver las imágenes aleatoriamente.
         function displayImage(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 var j = Math.floor(Math.random() * (i + 1));
@@ -96,7 +114,6 @@
             pic.style.backgroundImage = img;
         }
 
-        // Función para revolver las imágenes aleatoriamente.
         canvas.addEventListener("mousedown", (event) => {
             var LayautX = event.clientX - canvas.getBoundingClientRect().left;
             var LayautY = event.clientY - canvas.getBoundingClientRect().top;
@@ -109,13 +126,16 @@
             ctx.stroke();
         });
 
-        // Carga las imágenes
+        canvas.style.pointerEvents = "none";
+
+        function enableCanvasClick() {
+            canvas.style.pointerEvents = "auto";
+        }
+
         var imageObjects = [];
 
-        // Estado de las cartas (0: boca abajo, 1: boca arriba, 2: desaparecida)
         var cardStates = Array(images.length).fill(0);
 
-        // Índices de las cartas seleccionadas
         var firstCardIndex = -1;
         var secondCardIndex = -1;
 
@@ -128,12 +148,12 @@
                 image.onload = () => {
                     loadedImages++;
                     if (loadedImages === images.length) {
-                        // Cuando se han cargado todas las imágenes, habilita los botones del juego
                         document.getElementById("easyButton").addEventListener("click", () => {
                             startGame("easy");
                             document.getElementById("easyButton").disabled = true;
                             document.getElementById("mediumButton").disabled = false;
                             document.getElementById("hardButton").disabled = false;
+                            enableCanvasClick();
                         });
 
                         document.getElementById("mediumButton").addEventListener("click", () => {
@@ -141,6 +161,7 @@
                             document.getElementById("easyButton").disabled = false;
                             document.getElementById("mediumButton").disabled = true;
                             document.getElementById("hardButton").disabled = false;
+                            enableCanvasClick();
                         });
 
                         document.getElementById("hardButton").addEventListener("click", () => {
@@ -148,6 +169,7 @@
                             document.getElementById("easyButton").disabled = false;
                             document.getElementById("mediumButton").disabled = false;
                             document.getElementById("hardButton").disabled = true;
+                            enableCanvasClick();
                         });
                     }
                 };
@@ -158,11 +180,10 @@
             resetGame();
             backgroundMusic.pause();
 
-            // Selecciona la música de fondo según el nivel
             if (level === "easy") {
                 backgroundMusic.src = "sound/musica-fondo2.mp3";
             } else if (level === "medium") {
-                backgroundMusic.src = "sound/musica-fondo.mp3";
+                backgroundMusic.src = "sound/sonido-fondo3.mp3";
             } else if (level === "hard") {
                 backgroundMusic.src = "sound/musica-fondo.mp3";
             }
@@ -212,22 +233,24 @@
                 }
             }
 
-            // Inicia el temporizador
             startTimer(timeLimit);
         }
 
-        // Agrego un evento de clic al canvas
         canvas.addEventListener("click", handleClick);
 
         function drawCard(x, y, index) {
             const state = cardStates[index];
 
-            // Dibujo un cuadrado para representar la carta
             ctx.fillStyle = "#ecffae";
             ctx.fillRect(x, y, cardWidth, cardHeight);
 
             if (state === 0) {
-                ctx.fillStyle = "#b6f77b";
+                var grd = ctx.createLinearGradient(35, 70, 35, 80, 60, 222);
+
+                grd.addColorStop(1, "#b6f77b");
+                grd.addColorStop(0, "#25b869");
+
+                ctx.fillStyle = grd;
                 ctx.fillRect(x, y, cardWidth, cardHeight);
 
                 ctx.fillStyle = "black";
@@ -238,7 +261,6 @@
             }
         }
 
-        //Funcion de delay
         function handleClick(event) {
             if (isWaiting) {
                 return;
@@ -246,7 +268,6 @@
             var mouseX = event.clientX - canvas.getBoundingClientRect().left;
             var mouseY = event.clientY - canvas.getBoundingClientRect().top;
 
-            // Comprueba si se hizo clic en una carta boca abajo
             for (let i = 0; i < images.length; i++) {
                 const x = gap + (cardWidth + gap) * (i % 6);
                 const y = gap + (cardHeight + gap) * Math.floor(i / 6);
@@ -255,11 +276,9 @@
                     mouseX >= x && mouseX <= x + cardWidth &&
                     mouseY >= y && mouseY <= y + cardHeight
                 ) {
-                    // Voltea la carta
                     cardStates[i] = 1;
                     redrawCards();
 
-                    // Reproduce el sonido de la carta
                     const cardSound = document.getElementById("cardSound");
                     cardSound.currentTime = 0;
                     cardSound.play();
@@ -275,10 +294,10 @@
                             cardStates[secondCardIndex] = 2;
                             console.log("entro");
                         }
-                        // Delay
+
                         isWaiting = true;
                         setTimeout(() => {
-                            // Si no se encontró un par, voltea las cartas nuevamente
+
                             if (cardStates[firstCardIndex] !== 2 || cardStates[secondCardIndex] !== 2) {
                                 cardStates[firstCardIndex] = 0;
                                 cardStates[secondCardIndex] = 0;
@@ -297,10 +316,9 @@
         }
 
         function redrawCards() {
-            // Borra el canvas
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Dibuja las cartas en función de su estado actual
             ctx.fillStyle = "#d1fb94";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             let x = gap;
@@ -318,37 +336,61 @@
         }
 
         function checkGameComplete() {
-            // Comprueba si todas las cartas están en el estado "eliminado"
+
             if (cardStates.every(state => state === 2)) {
                 clearInterval(timerInterval);
-                alert("¡Has ganado el juego!");
+                backgroundMusic.pause();
+                const winSound = document.getElementById("winSound");
+                winSound.currentTime = 0;
+                winSound.play();
+
+                showModal();
+            }
+        }
+
+        function showModal() {
+            var modal = document.getElementById("myModal");
+            var restartButton = document.getElementById("restartButton");
+
+            modal.style.display = "block";
+
+            var closeButton = document.getElementsByClassName("close")[0];
+            closeButton.onclick = function () {
+                modal.style.display = "none";
+            }
+
+            restartButton.onclick = function () {
+                modal.style.display = "none";
+                resetGame();
             }
         }
 
         function startTimer(timeLimit) {
             var startTime = Date.now();
-            timerInterval = setInterval(function () { // Elimina la declaración "var" aquí
+            timerInterval = setInterval(function () {
                 var currentTime = Date.now();
                 var elapsedTime = Math.floor((currentTime - startTime) / 1000);
 
                 minutes = Math.floor(elapsedTime / 60);
                 seconds = elapsedTime % 60;
 
-                // Actualiza el temporizador en la pantalla
                 document.getElementById("timer").textContent = "Tiempo: " + minutes + " minutos " + seconds + " segundos";
 
                 if (elapsedTime >= timeLimit) {
                     clearInterval(timerInterval);
-                    alert("¡LOSER! Tiempo agotado.");
-                    resetGame();
+                    backgroundMusic.pause();
+                    const loseSound = document.getElementById("loseSound");
+                    loseSound.currentTime = 0;
+                    loseSound.play();
+
+                    showModal("¡Has perdido el juego!");
                 }
-            }, 1000);
+                }, 1000);
         }
 
 
         function resetGame() {
 
-            // Restablece el estado del juego y todas las variables necesarias
             minutes = 0;
             seconds = 0;
             clearInterval(timerInterval);
@@ -357,7 +399,6 @@
             redrawCards();
         }
 
-        // Inicia la carga de imágenes 
         loadImages();
     </script>
 </body>
